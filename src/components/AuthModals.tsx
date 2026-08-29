@@ -299,21 +299,6 @@ export const AuthModals: React.FC<AuthModalsProps> = ({
             </button>
           </form>
 
-          {/* Quick Demo Credentials Info */}
-          <div className="mt-4 p-2.5 rounded-lg bg-neutral-100 dark:bg-neutral-800/80 text-[11px] text-neutral-500 dark:text-neutral-400 flex items-center justify-between">
-            <span>Demo Member:</span>
-            <button
-              type="button"
-              onClick={() => {
-                setLoginEmail('alex.writer@wejobs.com');
-                setLoginPassword('wejobs123');
-              }}
-              className="text-orange-600 dark:text-orange-400 font-semibold hover:underline cursor-pointer"
-            >
-              Auto-Fill (alex.writer@wejobs.com)
-            </button>
-          </div>
-
           <div className="mt-5 text-center text-xs text-neutral-500 dark:text-neutral-400">
             Don't have an account yet?{' '}
             <button
