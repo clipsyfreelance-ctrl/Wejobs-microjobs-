@@ -43,6 +43,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
   if (!task) return null;
 
   const isFull = task.remainingSlots <= 0 || task.status === 'full';
+  const needsVerification = !!user && user.recipientStatus !== 'verified';
 
   // Calculate approximate rate per 100 words
   const parsedWords = parseInt(task.wordCount.replace(/[^0-9]/g, ''), 10) || 500;
@@ -57,6 +58,11 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
   const handleClaim = async () => {
     if (!user) {
       onOpenLogin();
+      return;
+    }
+
+    if (user.recipientStatus !== 'verified') {
+      setClaimError('Silakan verifikasi akun pembayaran Anda terlebih dahulu sebelum mengerjakan tugas.');
       return;
     }
 
@@ -309,10 +315,10 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
             {!claimSuccess && (
               <button
                 type="button"
-                disabled={isFull || claiming}
+                disabled={isFull || claiming || needsVerification}
                 onClick={handleClaim}
                 className={`w-full sm:w-auto px-8 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                  isFull
+                  isFull || needsVerification
                     ? 'bg-neutral-300 dark:bg-neutral-800 text-neutral-500 cursor-not-allowed'
                     : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/25'
                 }`}
@@ -321,6 +327,8 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                   <span>Reserving Slot...</span>
                 ) : isFull ? (
                   <span>Task Full</span>
+                ) : needsVerification ? (
+                  <span>🔒 Verifikasi Akun Diperlukan</span>
                 ) : user ? (
                   <span>Take Job & Claim Slot (${task.payment.toFixed(2)} USD)</span>
                 ) : (
