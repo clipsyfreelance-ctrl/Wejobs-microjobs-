@@ -13,6 +13,10 @@ import {
   PAYMENT_CHANNELS,
   getPaymentChannelByCode,
 } from '../types';
+import { db } from '../firebase';
+import {
+  collection, query, where, getDocs, doc, updateDoc,
+} from 'firebase/firestore';
 import { AvatarDisplay } from './AvatarDisplay';
 import { AdminChallengeManager } from './AdminChallengeManager';
 import {
@@ -112,29 +116,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Fetch verifications and eligibility data
   const fetchAdminVerificationData = async () => {
     try {
-      const token = localStorage.getItem('wejobs_token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      // 1. Payout Eligibility
       setLoadingEligibility(true);
-      const eligRes = await fetch('/api/payout-eligibility/all', { headers });
-      if (eligRes.ok) {
-        const eligData = await eligRes.json();
-        if (eligData.success) {
-          setEligibilityRequests(eligData.requests || []);
-        }
-      }
+      const usersSnap = await getDocs(
+        query(collection(db, 'users'), where('payoutEligibilityStatus', '==', 'pending'))
+      );
+      const eligList: any[] = usersSnap.docs.map((d) => {
+        const u: any = d.data();
+        return {
+          id: d.id,
+          userId: d.id,
+          userEmail: u.email,
+          userName: u.fullName,
+          currentBalance: u.availableBalance || 0,
+          completedJobsCount: u.completedJobsCount || 0,
+          reason: u.payoutEligibilityNote || '',
+          status: 'pending',
+          createdAt: u.payoutEligibilityRequestedAt || new Date().toISOString(),
+        };
+      });
+      setEligibilityRequests(eligList);
       setLoadingEligibility(false);
 
-      // 2. Payment Account Verifications
       setLoadingPaymentVerifications(true);
-      const pVerRes = await fetch('/api/payment-verifications/all', { headers });
-      if (pVerRes.ok) {
-        const pVerData = await pVerRes.json();
-        if (pVerData.success) {
-          setPaymentVerifications(pVerData.verifications || []);
-        }
-      }
+      const pVerSnap = await getDocs(
+        query(collection(db, 'paymentVerifications'), where('status', '==', 'pending'))
+      );
+      const pVerList: any[] = pVerSnap.docs.map((d) => {
+        const data: any = d.data();
+        return { id: d.id, ...data, submittedAt: data.requestedAt };
+      });
+      setPaymentVerifications(pVerList);
       setLoadingPaymentVerifications(false);
     } catch (err) {
       console.warn('Failed to load admin verifications data', err);
@@ -152,27 +163,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (!selectedEligibility) return;
     setProcessingEligibility(true);
     try {
-      const token = localStorage.getItem('wejobs_token');
-      const res = await fetch(`/api/payout-eligibility/${selectedEligibility.id}/review`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          action,
-          feedback: eligibilityFeedback || (action === 'approve' ? 'Memenuhi kelayakan penarikan dana.' : 'Pengajuan belum memenuhi syarat kelayakan.'),
-        }),
+      await updateDoc(doc(db, 'users', selectedEligibility.userId), {
+        payoutEligibilityStatus: action === 'approve' ? 'eligible' : 'rejected',
+        payoutEligibilityNote: eligibilityFeedback || (action === 'approve' ? 'Memenuhi kelayakan penarikan dana.' : 'Pengajuan belum memenuhi syarat kelayakan.'),
+        payoutEligibilityReviewedAt: new Date().toISOString(),
       });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setSelectedEligibility(null);
-        setEligibilityFeedback('');
-        await fetchAdminVerificationData();
-      } else {
-        alert(data.error || 'Gagal memproses review kelayakan.');
-      }
+      setSelectedEligibility(null);
+      setEligibilityFeedback('');
+      await fetchAdminVerificationData();
     } catch (err: any) {
       alert(err.message || 'Terjadi kesalahan sistem.');
     } finally {
@@ -184,27 +182,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (!selectedPaymentVerification) return;
     setProcessingPaymentVerification(true);
     try {
-      const token = localStorage.getItem('wejobs_token');
-      const res = await fetch(`/api/payment-verifications/${selectedPaymentVerification.id}/review`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          action,
-          feedback: verificationFeedback || (action === 'approve' ? 'Rekening telah diverifikasi dan aktif.' : 'Data rekening tidak sesuai dengan identitas terdaftar.'),
-        }),
+      await updateDoc(doc(db, 'paymentVerifications', selectedPaymentVerification.id), {
+        status: action === 'approve' ? 'verified' : 'rejected',
+        adminFeedback: verificationFeedback || (action === 'approve' ? 'Rekening telah diverifikasi dan aktif.' : 'Data rekening tidak sesuai dengan identitas terdaftar.'),
+        reviewedAt: new Date().toISOString(),
       });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setSelectedPaymentVerification(null);
-        setVerificationFeedback('');
-        await fetchAdminVerificationData();
-      } else {
-        alert(data.error || 'Gagal memproses review rekening.');
+      if (action === 'approve') {
+        await updateDoc(doc(db, 'users', selectedPaymentVerification.userId), {
+          recipientStatus: 'verified',
+        });
       }
+      setSelectedPaymentVerification(null);
+      setVerificationFeedback('');
+      await fetchAdminVerificationData();
     } catch (err: any) {
       alert(err.message || 'Terjadi kesalahan sistem.');
     } finally {

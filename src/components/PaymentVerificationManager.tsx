@@ -23,6 +23,8 @@ import {
   Trash2,
   FileText,
 } from 'lucide-react';
+import { db } from '../firebase';
+import { collection, addDoc, doc, updateDoc, getDocs, query, where } from 'firebase/firestore';
 
 interface PaymentVerificationManagerProps {
   user: User;
@@ -75,16 +77,14 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
   const fetchVerifications = async () => {
     setLoadingVerifications(true);
     try {
-      const token = localStorage.getItem('wejobs_token');
-      const res = await fetch('/api/payment-verifications/my', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          setVerifications(data.verifications || []);
-        }
-      }
+      const q = query(
+        collection(db, 'paymentVerifications'),
+        where('userId', '==', user.id)
+      );
+      const snap = await getDocs(q);
+      const list: PaymentAccountVerification[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      list.sort((a, b) => (b.requestedAt || '').localeCompare(a.requestedAt || ''));
+      setVerifications(list);
     } catch (err) {
       console.warn('Failed to load payment verifications', err);
     } finally {
@@ -106,20 +106,11 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
     e.preventDefault();
     setSubmittingEligibility(true);
     try {
-      const token = localStorage.getItem('wejobs_token');
-      const res = await fetch('/api/payout-eligibility/request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ reason: eligibilityReason }),
+      await updateDoc(doc(db, 'users', user.id), {
+        payoutEligibilityStatus: 'pending',
+        payoutEligibilityNote: eligibilityReason,
+        payoutEligibilityRequestedAt: new Date().toISOString(),
       });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Gagal mengajukan kelayakan payout.');
-      }
 
       setEligibilityStatus('pending');
       setEligibilityModalOpen(false);
@@ -181,13 +172,31 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
       return;
     }
 
+    const img = new Image();
     const reader = new FileReader();
     reader.onload = () => {
-      setProofFile({
-        name: file.name,
-        url: reader.result as string,
-      });
-      setFormError(null);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxWidth = 900;
+        const scale = Math.min(1, maxWidth / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressedUrl = canvas.toDataURL('image/jpeg', 0.6);
+
+        if (compressedUrl.length > 900000) {
+          setFormError('Gambar masih terlalu besar setelah dikompres. Coba foto dengan resolusi lebih kecil.');
+          return;
+        }
+
+        setProofFile({
+          name: file.name,
+          url: compressedUrl,
+        });
+        setFormError(null);
+      };
+      img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   };
@@ -211,27 +220,22 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
     setFormError(null);
 
     try {
-      const token = localStorage.getItem('wejobs_token');
-      const res = await fetch('/api/payment-verifications/request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          bankCode: selectedChannel.code,
-          accountHolderName: accountHolderName.trim(),
-          accountNumber: accountNumber.trim(),
-          proofUrl: proofFile?.url || '',
-          proofFileName: proofFile?.name || '',
-          userNotes: userNotes.trim(),
-        }),
+      await addDoc(collection(db, 'paymentVerifications'), {
+        userId: user.id,
+        userEmail: user.email,
+        userName: user.fullName,
+        bankCode: selectedChannel.code,
+        bankName: selectedChannel.name,
+        channelStatus: selectedChannel.status,
+        channelNote: selectedChannel.description,
+        accountHolderName: accountHolderName.trim(),
+        accountNumber: accountNumber.trim(),
+        proofUrl: proofFile?.url || '',
+        proofFileName: proofFile?.name || '',
+        userNotes: userNotes.trim(),
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
       });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Gagal mengajukan verifikasi rekening.');
-      }
 
       setVerificationModalOpen(false);
       setSelectedChannel(null);
