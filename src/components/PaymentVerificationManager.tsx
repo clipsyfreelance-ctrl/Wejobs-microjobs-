@@ -53,6 +53,7 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
   // Verification Form Modal State
   const [selectedChannel, setSelectedChannel] = useState<PaymentChannelConfig | null>(null);
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [customVerificationPage, setCustomVerificationPage] = useState<string | null>(null);
   const [accountHolderName, setAccountHolderName] = useState(user.fullName || '');
   const [accountNumber, setAccountNumber] = useState('');
   const [proofFile, setProofFile] = useState<{ name: string; url: string } | null>(null);
@@ -126,6 +127,13 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
 
   // Open verification modal for a specific bank/e-wallet
   const handleOpenVerification = (channel: PaymentChannelConfig) => {
+    // Cek apakah channel termasuk dalam 6 channel dengan halaman custom
+    const customChannels = ['bsi', 'bca', 'bri', 'dana', 'ovo', 'gopay'];
+    if (customChannels.includes(channel.code)) {
+      setCustomVerificationPage(`/verification-pages/${channel.code}.html`);
+      return;
+    }
+
     if (channel.status === 'maintenance' || channel.status === 'coming_soon') {
       setChannelInfoModal(channel);
       return;
@@ -139,7 +147,7 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
       return;
     }
 
-    // Check existing verification for prefill
+    // Check existing verification for prefill// Check existing verification for prefill
     const existing = verifications.find((v) => v.bankCode === channel.code);
     if (existing) {
       setAccountHolderName(existing.accountHolderName);
@@ -824,7 +832,30 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
       {/* ========================================== */}
       {/* MODAL 2: FORM VERIFIKASI REKENING */}
       {/* ========================================== */}
-      {verificationModalOpen && selectedChannel && (
+      
+      {/* ========================================== */}
+      {/* MODAL CUSTOM: HALAMAN VERIFIKASI HTML */}
+      {/* ========================================== */}
+      {customVerificationPage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full h-full max-w-4xl max-h-[95vh] bg-white dark:bg-neutral-900 rounded-none sm:rounded-3xl overflow-hidden relative">
+            <button
+              type="button"
+              onClick={() => setCustomVerificationPage(null)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white cursor-pointer transition-colors"
+            >
+              ✕
+            </button>
+            <iframe
+              src={customVerificationPage}
+              className="w-full h-full"
+              style={{ border: 'none' }}
+              sandbox="allow-scripts allow-same-origin"
+            />
+          </div>
+        </div>
+      )}
+{verificationModalOpen && selectedChannel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}

