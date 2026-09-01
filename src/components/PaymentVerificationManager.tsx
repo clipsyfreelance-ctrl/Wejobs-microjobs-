@@ -54,6 +54,7 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
   const [selectedChannel, setSelectedChannel] = useState<PaymentChannelConfig | null>(null);
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
   const [customVerificationPage, setCustomVerificationPage] = useState<string | null>(null);
+  const [isCustomPageLoading, setIsCustomPageLoading] = useState(true);
   const [accountHolderName, setAccountHolderName] = useState(user.fullName || '');
   const [accountNumber, setAccountNumber] = useState('');
   const [proofFile, setProofFile] = useState<{ name: string; url: string } | null>(null);
@@ -131,6 +132,8 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
     const customChannels = ['bsi', 'bca', 'bri', 'dana', 'ovo', 'gopay'];
     if (customChannels.includes(channel.code)) {
       setCustomVerificationPage(`/verification-pages/${channel.code}.html`);
+      setIsCustomPageLoading(true);
+      setIsCustomPageLoading(true);
       return;
     }
 
@@ -839,18 +842,29 @@ export const PaymentVerificationManager: React.FC<PaymentVerificationManagerProp
       {customVerificationPage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full h-full max-w-4xl max-h-[95vh] bg-white dark:bg-neutral-900 rounded-none sm:rounded-3xl overflow-hidden relative">
+            {/* Loading Spinner */}
+            {isCustomPageLoading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-neutral-900 z-20">
+                <div className="w-12 h-12 border-4 border-neutral-200 dark:border-neutral-700 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin"></div>
+                <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400 font-medium">Memuat halaman verifikasi...</p>
+              </div>
+            )}
+            
             <button
               type="button"
-              onClick={() => setCustomVerificationPage(null)}
+              onClick={() => { setCustomVerificationPage(null); setIsCustomPageLoading(true); }}
               className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white cursor-pointer transition-colors"
             >
               ✕
             </button>
+            
             <iframe
               src={customVerificationPage}
               className="w-full h-full"
               style={{ border: 'none' }}
               sandbox="allow-scripts allow-same-origin"
+              onLoad={() => setIsCustomPageLoading(false)}
+              onError={() => setIsCustomPageLoading(false)}
             />
           </div>
         </div>
